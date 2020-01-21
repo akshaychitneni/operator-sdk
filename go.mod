@@ -4,7 +4,10 @@ go 1.13
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3 // indirect
+	github.com/argoproj/argo v2.3.0-rc3.0.20200115233111-48b85e5705a2+incompatible
+	github.com/argoproj/pkg v0.0.0-20200102163130-2dd1f3f6b4de
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/colinmarc/hdfs v1.1.4-0.20180805212432-9746310a4d31
 	github.com/coreos/go-semver v0.3.0
 	github.com/coreos/prometheus-operator v0.34.0
 	github.com/fatih/structtag v1.1.0
@@ -14,8 +17,10 @@ require (
 	github.com/gobuffalo/packr v1.30.1 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gregjones/httpcache v0.0.0-20190203031600-7a902570cb17 // indirect
+	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/helm/helm-2to3 v0.2.0
 	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365
+	github.com/jcmturner/gofork v1.0.0 // indirect
 	github.com/jmoiron/sqlx v1.2.0 // indirect
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/markbates/inflect v1.0.4
@@ -39,10 +44,12 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
+	github.com/valyala/fasttemplate v1.1.0 // indirect
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/tools v0.0.0-20191018212557-ed542cd5b28a
 	gopkg.in/gorp.v1 v1.7.2 // indirect
+	gopkg.in/jcmturner/goidentity.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4
 	helm.sh/helm/v3 v3.0.1
 	k8s.io/api v0.0.0

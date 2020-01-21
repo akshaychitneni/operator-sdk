@@ -22,6 +22,7 @@ import (
 
 	"github.com/operator-framework/operator-sdk/cmd/operator-sdk/internal/genutil"
 	"github.com/operator-framework/operator-sdk/internal/scaffold"
+	"github.com/operator-framework/operator-sdk/internal/scaffold/argo"
 	"github.com/operator-framework/operator-sdk/internal/scaffold/input"
 	"github.com/operator-framework/operator-sdk/internal/util/projutil"
 
@@ -34,6 +35,7 @@ var (
 	apiVersion     string
 	kind           string
 	skipGeneration bool
+	argoWorkflowPath string
 )
 
 func newAddAPICmd() *cobra.Command {
@@ -84,6 +86,8 @@ Example:
 	}
 	apiCmd.Flags().BoolVar(&skipGeneration, "skip-generation", false, "Skip generation of deepcopy and OpenAPI code and OpenAPI CRD specs")
 
+	apiCmd.Flags().StringVar(&argoWorkflowPath, "argo-workflow-path", "", "argo workflow to use")
+
 	return apiCmd
 }
 
@@ -118,13 +122,25 @@ func apiRun(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "scaffold group file")
 	}
 
-	err = s.Execute(cfg,
-		&scaffold.Types{Resource: r},
-		&scaffold.AddToScheme{Resource: r},
-		&scaffold.Register{Resource: r},
-		&scaffold.Doc{Resource: r},
-		&scaffold.CR{Resource: r},
-	)
+	if argoWorkflowPath != "" {
+		err = s.Execute(cfg,
+			&argo.ArgoTypes{Resource: r, ArgoWorkflowPath: argoWorkflowPath},
+			&argo.AddToScheme{Resource: r},
+			&scaffold.Register{Resource: r},
+			&scaffold.Doc{Resource: r},
+			&scaffold.CR{Resource: r},
+		)
+	} else {
+		err = s.Execute(cfg,
+			&scaffold.Types{Resource: r},
+			&scaffold.AddToScheme{Resource: r},
+			&scaffold.Register{Resource: r},
+			&scaffold.Doc{Resource: r},
+			&scaffold.CR{Resource: r},
+		)
+	}
+
+
 	if err != nil {
 		return fmt.Errorf("api scaffold failed: (%v)", err)
 	}
