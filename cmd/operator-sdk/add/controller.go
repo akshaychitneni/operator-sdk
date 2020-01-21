@@ -16,6 +16,7 @@ package add
 
 import (
 	"fmt"
+	"github.com/operator-framework/operator-sdk/internal/scaffold/argo"
 
 	"github.com/operator-framework/operator-sdk/internal/scaffold"
 	"github.com/operator-framework/operator-sdk/internal/scaffold/input"
@@ -26,6 +27,7 @@ import (
 )
 
 var customAPIImport string
+var argoWorkflow bool
 
 func newAddControllerCmd() *cobra.Command {
 	controllerCmd := &cobra.Command{
@@ -61,6 +63,7 @@ Example:
 		log.Fatalf("Failed to mark `kind` flag for `add controller` subcommand as required")
 	}
 	controllerCmd.Flags().StringVar(&customAPIImport, "custom-api-import", "", `External Kubernetes resource import path of the form "host.com/repo/path[=import_identifier]". import_identifier is optional`)
+	controllerCmd.Flags().BoolVar(&argoWorkflow, "argo-workflow", false, `controller for argo workflow`)
 
 	return controllerCmd
 }
@@ -87,10 +90,18 @@ func controllerRun(cmd *cobra.Command, args []string) error {
 	}
 	s := &scaffold.Scaffold{}
 
-	err = s.Execute(cfg,
-		&scaffold.ControllerKind{Resource: r, CustomImport: customAPIImport},
-		&scaffold.AddController{Resource: r},
-	)
+	if argoWorkflow {
+		err = s.Execute(cfg,
+			&argo.ArgoControllerKind{Resource: r, CustomImport: customAPIImport},
+			&scaffold.AddController{Resource: r},
+		)
+	} else {
+		err = s.Execute(cfg,
+			&scaffold.ControllerKind{Resource: r, CustomImport: customAPIImport},
+			&scaffold.AddController{Resource: r},
+		)
+	}
+
 	if err != nil {
 		return fmt.Errorf("controller scaffold failed: (%v)", err)
 	}
