@@ -1,12 +1,7 @@
-<img src="doc/images/operator_logo_sdk_color.svg" height="125px"></img>
 
-[![Build Status](https://travis-ci.org/operator-framework/operator-sdk.svg?branch=master)](https://travis-ci.org/operator-framework/operator-sdk)
-[![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
-[![Go Report Card](https://goreportcard.com/badge/github.com/operator-framework/operator-sdk)](https://goreportcard.com/report/github.com/operator-framework/operator-sdk)
 
 ## Overview
-
-This project is a component of the [Operator Framework][of-home], an open source toolkit to manage Kubernetes native applications, called Operators, in an effective, automated, and scalable way. Read more in the [introduction blog post][of-blog].
+This branch extends operator-sdk for Argo Workflows. Given an Argo Workflow, it maps workflow parameters with CRs in kubernetes. It also auto-generates go code that is part of controller to trigger workflows on CR create/update events.
 
 [Operators][operator_link] make it easy to manage complex stateful applications on top of Kubernetes. However writing an operator today can be difficult because of challenges such as using low level APIs, writing boilerplate, and a lack of modularity which leads to duplication.
 
@@ -15,28 +10,6 @@ The Operator SDK is a framework that uses the [controller-runtime][controller_ru
 - Tools for scaffolding and code generation to bootstrap a new project fast
 - Extensions to cover common operator use cases
 
-## Workflow
-
-The SDK provides workflows to develop operators in Go, Ansible, or Helm.
-
-The following workflow is for a new **Go** operator:
-1. Create a new operator project using the SDK Command Line Interface(CLI)
-2. Define new resource APIs by adding Custom Resource Definitions(CRD)
-3. Define Controllers to watch and reconcile resources
-4. Write the reconciling logic for your Controller using the SDK and controller-runtime APIs
-5. Use the SDK CLI to build and generate the operator deployment manifests
-
-The following workflow is for a new **Ansible** operator:
-1. Create a new operator project using the SDK Command Line Interface(CLI)
-2. Write the reconciling logic for your object using ansible playbooks and roles
-3. Use the SDK CLI to build and generate the operator deployment manifests
-4. Optionally add additional CRD's using the SDK CLI and repeat steps 2 and 3
-
-The following workflow is for a new **Helm** operator:
-1. Create a new operator project using the SDK Command Line Interface(CLI)
-2. Create a new (or add your existing) Helm chart for use by the operator's reconciling logic
-3. Use the SDK CLI to build and generate the operator deployment manifests
-4. Optionally add additional CRD's using the SDK CLI and repeat steps 2 and 3
 
 ## Prerequisites
 
@@ -55,6 +28,8 @@ The following workflow is for a new **Helm** operator:
 
 Follow the steps in the [installation guide][install_guide] to learn how to install the Operator SDK CLI tool.
 
+Install the cli from Argo branch
+
 **Note:** If you are using a release version of the SDK, make sure to follow the documentation for that version. e.g.: For version 0.8.1, see docs in https://github.com/operator-framework/operator-sdk/tree/v0.8.1.
 
 ### Create and deploy an app-operator
@@ -68,10 +43,10 @@ $ operator-sdk new app-operator --repo github.com/example-inc/app-operator
 $ cd app-operator
 
 # Add a new API for the custom resource AppService
-$ operator-sdk add api --api-version=app.example.com/v1alpha1 --kind=AppService
+$ operator-sdk add api --api-version=app.example.com/v1alpha1 --kind=AppService --argo-workflow-path=<workflow.yaml>
 
 # Add a new controller that watches for AppService
-$ operator-sdk add controller --api-version=app.example.com/v1alpha1 --kind=AppService
+$ operator-sdk add controller --api-version=app.example.com/v1alpha1 --kind=AppService --argo-workflow
 
 # Build and push the app-operator image to a public registry such as quay.io
 $ operator-sdk build quay.io/<username>/app-operator
