@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"github.com/operator-framework/operator-sdk/internal/scaffold"
 	"github.com/operator-framework/operator-sdk/internal/scaffold/input"
+	"log"
 	"path"
 	"path/filepath"
 	"strings"
 	"unicode"
+	"encoding/json"
+	argo_util "github.com/argoproj/argo/workflow/util"
+	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 )
 
 
@@ -31,6 +35,9 @@ type ArgoControllerKind struct {
 	// GoImportIdent is the import identifier for the API reconciled by this
 	// controller.
 	GoImportIdent string
+
+	ArgoWorkflowPath string
+	WorkflowJsonStr string
 }
 
 func (s *ArgoControllerKind) GetInput() (input.Input, error) {
@@ -41,6 +48,25 @@ func (s *ArgoControllerKind) GetInput() (input.Input, error) {
 	// Error if this file exists.
 	s.IfExistsAction = input.Error
 	s.TemplateBody = controllerKindTemplate
+
+	fileContents, err := argo_util.ReadManifest(s.ArgoWorkflowPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var workflows []wfv1.Workflow
+	for _, body := range fileContents {
+		wfs := unmarshalWorkflows(body, true)
+		workflows = append(workflows, wfs...)
+	}
+	if len(workflows) > 0 {
+		//TODO: validate workflow
+		b, err := json.Marshal(workflows[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.WorkflowJsonStr = "`" + string(b) + "`"
+	}
 
 	// Set imports.
 	if err := s.setImports(); err != nil {
@@ -126,6 +152,7 @@ var controllerKindImports = map[string]string{
 	"sigs.k8s.io/controller-runtime/pkg/source":                    "",
 	"k8s.io/kubernetes/pkg/controller":								"k8s_controller",
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1":			"argov1",
+	"github.com/argoproj/pkg/json":									"argoJson",
 }
 
 const controllerKindTemplate = `package {{ .Resource.LowerKind }}
@@ -153,24 +180,13 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	workflow := argov1.Workflow{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "hello-world-",
-		},
-		Spec: argov1.WorkflowSpec{
-			Entrypoint: "whalesay",
-			Templates: []argov1.Template{
-				{
-					Name: "whalesay",
-					Container: &corev1.Container{
-						Image:   "docker/whalesay:latest",
-						Command: []string{"cowsay", "hello world"},
-					},
-				},
-			},
-		},
+    workflowJson := {{ .WorkflowJsonStr}}
+	workflowJsonBytes := []byte(workflowJson)
+	workflows := unmarshalWorkflows(workflowJsonBytes, true)
+	if len(workflows) == 0 {
+		return nil
 	}
-	return &Reconcile{{ .Resource.Kind }}{client: mgr.GetClient(), scheme: mgr.GetScheme(), workflowTemplate: &workflow}
+	return &ReconcileAppAService{client: mgr.GetClient(), scheme: mgr.GetScheme(), workflowTemplate: &workflows[0]}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -330,5 +346,22 @@ func getSpecValsUsingReflection(cr *{{ .GoImportIdent }}.{{ .Resource.Kind }}) m
 		vals[typeField.Name] = strings.ToLower(value)
 	}
 	return vals
+}
+
+func unmarshalWorkflows(wfBytes []byte, strict bool) []argov1.Workflow {
+	var wf argov1.Workflow
+	var jsonOpts []argoJson.JSONOpt
+	if strict {
+		jsonOpts = append(jsonOpts, argoJson.DisallowUnknownFields)
+	}
+	err := argoJson.Unmarshal(wfBytes, &wf, jsonOpts...)
+	if err == nil {
+		return []argov1.Workflow{wf}
+	}
+	yamlWfs, err := common.SplitWorkflowYAMLFile(wfBytes, strict)
+	if err == nil {
+		return yamlWfs
+	}
+	return nil
 }
 `

@@ -128,7 +128,7 @@ func apiRun(cmd *cobra.Command, args []string) error {
 			&argo.AddToScheme{Resource: r},
 			&scaffold.Register{Resource: r},
 			&scaffold.Doc{Resource: r},
-			&scaffold.CR{Resource: r},
+			&argo.CR{Resource: r, ArgoWorkflowPath: argoWorkflowPath},
 		)
 	} else {
 		err = s.Execute(cfg,
