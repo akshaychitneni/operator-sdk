@@ -46,7 +46,7 @@ $ cd app-operator
 $ operator-sdk add api --api-version=app.example.com/v1alpha1 --kind=AppService --argo-workflow-path=<workflow.yaml>
 
 # Add a new controller that watches for AppService
-$ operator-sdk add controller --api-version=app.example.com/v1alpha1 --kind=AppService --argo-workflow
+$ operator-sdk add controller --api-version=app.example.com/v1alpha1 --kind=AppService --argo-workflow-path=<workflow.yaml>
 
 # Build and push the app-operator image to a public registry such as quay.io
 $ operator-sdk build quay.io/<username>/app-operator
