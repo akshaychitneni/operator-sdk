@@ -16,13 +16,13 @@ package k8sutil
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
 	"strings"
 	"unicode"
 
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -87,7 +87,8 @@ func GetDisplayName(name string) string {
 		for j, r := range word {
 			if unicode.IsUpper(r) {
 				if j > 0 && !unicode.IsUpper(rune(word[j-1])) {
-					temp = temp[0:j+o] + " " + temp[j+o:len(temp)]
+					index := j + o
+					temp = temp[0:index] + " " + temp[index:]
 					o++
 				}
 			}
@@ -108,7 +109,7 @@ func GetTypeMetaFromBytes(b []byte) (t metav1.TypeMeta, err error) {
 	if err := dec.Decode(&u); err == nil && r.Len() != 0 {
 		return t, errors.New("error getting TypeMeta from bytes: more than one manifest in file")
 	} else if err != nil && err != io.EOF {
-		return t, errors.Wrap(err, "error getting TypeMeta from bytes")
+		return t, fmt.Errorf("error getting TypeMeta from bytes: %v", err)
 	}
 	return metav1.TypeMeta{
 		APIVersion: u.GetAPIVersion(),

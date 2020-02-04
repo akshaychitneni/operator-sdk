@@ -19,11 +19,10 @@ import (
 	"fmt"
 	"strings"
 
-	scapiv1alpha1 "github.com/operator-framework/operator-sdk/pkg/apis/scorecard/v1alpha1"
+	scapiv1alpha2 "github.com/operator-framework/operator-sdk/pkg/apis/scorecard/v1alpha2"
+
 	"k8s.io/apimachinery/pkg/labels"
 )
-
-// Type Definitions
 
 // Test provides methods for running scorecard tests
 type Test interface {
@@ -36,20 +35,19 @@ type Test interface {
 
 // TestResult contains a test's points, suggestions, and errors
 type TestResult struct {
-	State         scapiv1alpha1.State
-	Test          Test
-	EarnedPoints  int
-	MaximumPoints int
-	Suggestions   []string
-	Errors        []error
-	Log           string
+	State       scapiv1alpha2.State
+	Test        Test
+	Suggestions []string
+	Errors      []error
+	Log         string
 }
 
 // TestInfo contains information about the scorecard test
 type TestInfo struct {
 	Name        string
 	Description string
-	// If a test is set to cumulative, the scores of multiple runs of the same test on separate CRs are added together for the total score.
+	// If a test is set to cumulative, the scores of multiple runs of the same test on separate CRs are
+	// added together for the total score.
 	// If cumulative is false, if any test failed, the total score is 0/1. Otherwise 1/1.
 	Cumulative bool
 	Labels     map[string]string
@@ -67,41 +65,18 @@ func (i TestInfo) GetLabels() map[string]string { return i.Labels }
 // IsCumulative returns true if the test's scores are intended to be cumulative
 func (i TestInfo) IsCumulative() bool { return i.Cumulative }
 
-// TestSuite contains a list of tests and results, along with the relative weights of each test. Also can optionally contain a log
+// TestSuite contains a list of tests and results, along with the relative weights of each test.
+// Also can optionally contain a log
 type TestSuite struct {
 	TestInfo
 	Tests       []Test
 	TestResults []TestResult
-	Weights     map[string]float64
 	Log         string
 }
 
-// Helper functions
-
-// AddTest adds a new Test to a TestSuite along with a relative weight for the new Test
-func (ts *TestSuite) AddTest(t Test, weight float64) {
+// AddTest adds a new Test to a TestSuite
+func (ts *TestSuite) AddTest(t Test) {
 	ts.Tests = append(ts.Tests, t)
-	ts.Weights[t.GetName()] = weight
-}
-
-// TotalScore calculates and returns the total score of all run Tests in a TestSuite
-func (ts *TestSuite) TotalScore() (score int) {
-	floatScore := 0.0
-	for _, result := range ts.TestResults {
-		if result.MaximumPoints != 0 {
-			floatScore += (float64(result.EarnedPoints) / float64(result.MaximumPoints)) * ts.Weights[result.Test.GetName()]
-		}
-	}
-	// scale to a percentage
-	addedWeights := 0.0
-	for _, weight := range ts.Weights {
-		addedWeights += weight
-	}
-	// protect against divide by zero for failed plugins
-	if addedWeights == 0 {
-		return 0
-	}
-	return int(floatScore * (100 / addedWeights))
 }
 
 // ApplySelector apply label selectors removing tests that do not match
@@ -111,7 +86,6 @@ func (ts *TestSuite) ApplySelector(selector labels.Selector) {
 		if !selector.Matches(labels.Set(t.GetLabels())) {
 			// Remove the test
 			ts.Tests = append(ts.Tests[:i], ts.Tests[i+1:]...)
-			delete(ts.Weights, t.GetName())
 			i--
 		}
 	}
@@ -131,7 +105,6 @@ func NewTestSuite(name, description string) *TestSuite {
 			Name:        name,
 			Description: description,
 		},
-		Weights: make(map[string]float64),
 	}
 }
 
@@ -141,6 +114,7 @@ func MergeSuites(suites []TestSuite) ([]TestSuite, error) {
 	for _, suite := range suites {
 		suiteMap[suite.GetName()] = append(suiteMap[suite.GetName()], suite)
 	}
+
 	mergedSuites := []TestSuite{}
 	for _, suiteSlice := range suiteMap {
 		testMap := make(map[string][]TestResult)
@@ -163,7 +137,7 @@ func MergeSuites(suites []TestSuite) ([]TestSuite, error) {
 				newResult, err = ResultsPassFail(testSlice)
 			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to combine test results: %s", err)
+				return nil, fmt.Errorf("failed to combine test results: %v", err)
 			}
 			mergedTestResults = append(mergedTestResults, newResult)
 		}

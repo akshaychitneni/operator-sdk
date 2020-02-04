@@ -154,7 +154,7 @@ func (g crdGenerator) generateGo() (map[string][]byte, error) {
 	// Generate files in the generator's cache so we can modify the file name
 	// and annotations.
 	defName := "output:crd:cache"
-	cacheOutputDir := string(filepath.Separator) + filepath.Clean(g.OutputDir)
+	cacheOutputDir := filepath.Clean(g.OutputDir)
 	rawOpts := []string{
 		"crd",
 		fmt.Sprintf("paths=%s/...", fileutil.DotPath(g.Inputs[APIsDirKey])),
@@ -338,9 +338,11 @@ func checkCRDVersions(crd apiextv1beta1.CustomResourceDefinition) error {
 	multiVers := len(crd.Spec.Versions) > 0
 	if singleVer {
 		if !multiVers {
-			log.Warnf("CRD %s: spec.version is deprecated and should be migrated to spec.versions", crd.Spec.Names.Kind)
+			log.Warnf("CRD %s: spec.version is deprecated and should be migrated to spec.versions",
+				crd.Spec.Names.Kind)
 		} else if crd.Spec.Version != crd.Spec.Versions[0].Name {
-			return fmt.Errorf("spec.version %s must be the first element in spec.versions for CRD %s", crd.Spec.Version, crd.Spec.Names.Kind)
+			return fmt.Errorf("spec.version %s must be the first element in spec.versions for CRD %s",
+				crd.Spec.Version, crd.Spec.Names.Kind)
 		}
 	}
 
